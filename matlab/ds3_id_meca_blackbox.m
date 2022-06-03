@@ -6,8 +6,8 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
-addpath(work_dir(1:end)+"\2022.05.15_logs");
+addpath(work_dir(1:idx(end))+"\_data\2022.05.15_logs");
+addpath(work_dir(1:idx(end))+"\matlab\functions");
 
 % add flags
 save_figs = false;
@@ -29,23 +29,22 @@ meta{5} = {"output_2022-05-15_16-47-21-prbs2.log", [600 300], 0.02, [15.75, 15.6
 meta{6} = {"output_2022-05-15_16-59-29-battery-test2.log", [1 0], 0.01, [15.69, 15.16]};
 
 % read data
-temp = readmatrix(meta{SELECT}{1});
-temp = temp(meta{SELECT}{2}(1):end-meta{SELECT}{2}(2), :);
-% convert data
-temp(:, 2)=(temp(:, 2)-1000)/1000.*linspace(meta{SELECT}{4}(1), meta{SELECT}{4}(2), length(temp))'; % volt
-temp(:, 3)=temp(:, 3)*NB_POLES/2*(2*pi/60); % rad/s
+ground_truth = readmatrix(meta{SELECT}{1});
+ground_truth = ground_truth(meta{SELECT}{2}(1):end-meta{SELECT}{2}(2), :);
+% estimation of battery voltage during experiment extrapolated from measured data
+ground_truth(:, 2)=(ground_truth(:, 2)-1000)/1000.*linspace(meta{SELECT}{4}(1), meta{SELECT}{4}(2), length(ground_truth))'; % volt
 
-% TREND NOT REMOVED !
-if mod(length(temp), 2) == 1 % use even nb of points
-%     [u, MU, GU] = normalize(temp(2:end,2), 'center', 'mean','scale', 'std');
-%     [y, MY, GY] = normalize(temp(2:end,3), 'center', 'mean','scale', 'std');
-    u=temp(2:end,2);
-    y=temp(2:end,3);
+% remove trends and scale data to avoid numerical errors
+if mod(length(ground_truth), 2) == 1 % use even nb of points
+    [u, MU, GU] = normalize(ground_truth(2:end,2), 'center', 'mean', 'scale', 'std');
+    [y, MY, GY] = normalize(ground_truth(2:end,3), 'center', 'mean', 'scale', 'std');
+%     u=temp(2:end,2);
+%     y=temp(2:end,3);
 else
-%     [u, MU, GU] = normalize(temp(:,2), 'center', 'mean','scale', 'std');
-%     [y, MY, GY] = normalize(temp(:,3), 'center', 'mean','scale', 'std');
-    u=temp(:,2);
-    y=temp(:,3);
+    [u, MU, GU] = normalize(ground_truth(:,2), 'center', 'mean', 'scale', 'std');
+    [y, MY, GY] = normalize(ground_truth(:,3), 'center', 'mean', 'scale', 'std');
+%     u=temp(:,2);
+%     y=temp(:,3);
 end
 
 % create time vector
@@ -57,14 +56,14 @@ TF = (NLGTH-1)*TE; % Final time of the data
 t = 0:TE:TF;
 
 % plot
-figure;
+figure('Name','Plot whole data','NumberTitle','off');
 yyaxis left;
-plot(temp(:,2));
-ylim([0 max(temp(:,2))]*1.1);
+plot(ground_truth(:,2));
+ylim([0 max(ground_truth(:,2))]*1.1);
 ylabel("voltage [V]");
 yyaxis right;
-plot(temp(:,3));
-ylim([0 max(temp(:,3))]*1.1);
+plot(ground_truth(:,3));
+ylim([0 max(ground_truth(:,3))]*1.1);
 ylabel("\omega [rad/s]");
 xlabel("samples");
 
@@ -148,10 +147,12 @@ if PLGTH*PNB ~= NLGTH
     NLGTH = PLGTH*(PNB);
 end
 
-figure;
+figure('Name','Check data periodicity and noise','NumberTitle','off');
 plot(reshape(y, [], PNB));
 xlim([0 PLGTH]);
 legend;
+xlabel("Time [samples]");
+ylabel("Amplitude [-]");
 
 CUT = floor(2/3*PNB)*PLGTH;
 
@@ -165,7 +166,7 @@ zi=iddata(yi, ui, TE);
 zv=iddata(yv, uv, TE);
 zt=iddata(y, u, TE);
 
-set(zt, 'InputName', 'PWM duty cycle', 'OutputName', '\omega', 'InputUnit', '\mu s', 'OutputUnit', 'rad/s');
+set(zt, 'InputName', 'Throttle duty cycle', 'OutputName', 'RPM sensor signal', 'InputUnit', 'us', 'OutputUnit', 'Hz');
 w = (0:(PLGTH-1))*2*pi/(TE*PLGTH);
 
 %% FREQUENCY ANALYSIS
@@ -180,11 +181,11 @@ Gf=idfrd(gf(1:(PLGTH-1)/2), w(1:(PLGTH-1)/2), TE);
 Gs = spa(zt, []);
 
 % plots
-figure;
+figure('Name','Bode plot from fourrier and spectral analysis','NumberTitle','off');
 hold on;
 bodeplot(Gf); % h=bodeplot(Gf); showConfidence(h,2);
 bodeplot(Gs); % h=bodeplot(Gs); showConfidence(h,2);
-legend("Fourrier", "Spectral", "Location", "best");
+legend("Fourrier analysis", "Spectral analysis", "Location", "best");
 
 %% Order estimation
 % arx is used as is made by solving a least square probleme, ensuring "decroissance monotone"
@@ -196,17 +197,19 @@ for i=1:N_MAX
     C(i)=model_arx.estimationInfo.LossFcn;
 end
 
-figure;
+figure('Name','Loss function','NumberTitle','off');
 plot(C);
+xlabel("Order of Autoregressive model with Extra Input");
+ylabel("Loss [-]");
 
 %% Zero/Pole cancellation
 
-N_MIN = 3;
-N_MAX = 8;
+N_MIN = 4;
+N_MAX = 7;
 
 for i=N_MIN:N_MAX
     model_armax=armax(zt, [i,i,i,1]);
-    figure;
+    figure('Name','Pole-Zero map','NumberTitle','off');
     h=iopzplot(model_armax);
     showConfidence(h, 2);
     axis(2*[-1 1 -1 1])
@@ -219,11 +222,13 @@ end
 N = 5;
 model_oe=oe(zt, [N N 1]); 
 
-figure;
+figure('Name','Delay identification','NumberTitle','off');
 hold on;
 errorbar(model_oe.b, 2*model_oe.db);
 yline(0);
 disp([model_oe.b ; 2*model_oe.db]);
+xlabel("Ouput Error model coefficient order");
+ylabel("Value of coefficient");
 
 %% Estimation of nb & na
 NK = 1;
@@ -240,7 +245,8 @@ end
 figure
 plot(C);
 legend('nb=1', 'nb=2', 'nb=3', 'nb=4', 'nb=5'); %, 'nb=6');
-xlabel('na');
+xlabel('Autoregressive na model order');
+ylabel('Loss [-]');
 %% Compare with matlab order estimations
 % m = NK + NB; n = NA; 1 <= NB <= N-NK+1
 NA=3;
@@ -293,41 +299,19 @@ figure;
 resid(zv, model_ss);
 title('SS');
 
-%% FINAL
+%% VALLIDATION
 model = model_oe; % select best model
-
 modelc = d2c(model, 'tustin', TE);
+present(model);
+present(modelc);
+
 t = (0:length(u)-1)*meta{SELECT}{3};
 yhat = lsim(modelc, u, t);
-present(model);
 
 % plot
 figure;
 hold on;
-plot(t, yhat);
-plot(t, y);
+plot(t, yhat*GY+MY);
+plot(t, ground_truth(:,3));
 ylim([0 1e3]);
 legend("yhat", "y");
-present(modelc);
-
-%% MISC
-% read data
-SELECT = 2;
-temp = readmatrix(meta{SELECT}{1});
-temp(:, 2)=(temp(:, 2)-1000)/1000*(meta{SELECT}{4}(1)+meta{SELECT}{4}(1))/2; % volt
-temp(:, 3)=temp(:, 3)*NB_POLES/2*(2*pi/60); % rad/s
-temp = temp(meta{SELECT}{2}(1):end-meta{SELECT}{2}(2), :);
-
-u2=temp(:, 2);
-y2=temp(:, 3);
-t2=(0:length(temp)-1)*meta{SELECT}{3};
-
-s = tf('s');
-Ghand = (840*2*pi)/60/(5e-1*s+1);
-yhatg=lsim(Ghand, u2(:), t2(:));
-yhat=lsim(modelc, u2(:), t2(:));
-% plot
-figure; hold on; plot(t2, y2); plot(t2, yhat); plot(t2, yhatg); legend("data", "id model", "first order"); ylim([0 3000]);
-
-
-

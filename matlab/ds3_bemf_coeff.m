@@ -6,8 +6,11 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
-addpath(work_dir(1:end)+"\2022.05.15_logs");
+addpath(work_dir(1:idx(end))+"\_data\2022.05.15_logs");
+addpath(work_dir(1:idx(end))+"\matlab\functions");
+
+% flags
+flag_plotall = true;
 
 % set figures parameters
 set(groot, "DefaultAxesFontSize", 10);
@@ -44,7 +47,7 @@ md_tachy = [0 1410 2340 3060 3690 4290 5040 5640]'; % hand measured data
 input_pwm = [1000, 1100:50:1400]';
 LEN = length(input_pwm);
 
-% estimation of battery voltage during experiment
+% estimation of battery voltage during experiment extrapolated from measured data
 battery_level = linspace(meta{1}{4}(1), meta{2}{4}(2), LEN)'; 
 
 % extract mean rpm
@@ -56,21 +59,26 @@ for i = 2:LEN
     md_bemf(i,2) = var(y{idx}(mask));
     
     % plotting
-    figure; yyaxis left; plot(mask); ylim([0 1.1]); yyaxis right; plot(y{idx}); ylim([0 1e3])
+    if (flag_plotall==true)
+        figure("Name", "Visualisation of mask used to compute average", "NumberTitle", "off");
+        yyaxis left; plot(mask); ylim([0 1.1]); ylabel('Mask');
+        yyaxis right; plot(y{idx}); ylim([0 1e3]); ylabel('RPM sensor signal [Hz]');
+        xlable("time [samples]");
+    end
 end
 
 %% COMPUTE MOTOR'S NUMBER OF ELECTRIC POLES
 fitType = {'x'};
 reg_p = fit(md_tachy(2:end), md_bemf(2:end, 1), fitType);
 NB_POLES = round(2/reg_p.a);
-txt = "1/K = "+num2str(1/reg_p.a);
+txt = "nb\_poles/2 = "+num2str(1/reg_p.a);
 disp(NB_POLES);
 
 % plot
 figure("Name", "Computing number of electrical pôles of BLCD motor", "NumberTitle", "off");
 hold on; grid on; errorbar(md_tachy, md_bemf(:, 1), md_bemf(:, 2)); plot(reg_p); text(1100, 650, txt);
-xlabel("tachymeter measures [rpm]");
-ylabel("rpm sensor signal [Hz]");
+xlabel("Tachymeter measures [rpm]");
+ylabel('RPM sensor signal [Hz]');
 legend("data", "fitted curve", "Location", "best");
 
 %% COMPARE KV MODEL TO MEASUREMENTS
@@ -80,7 +88,7 @@ grid on;
 plot(input_pwm, md_tachy, '-o');
 errorbar(input_pwm, md_bemf(:,1)*NB_POLES/2, md_bemf(:,2));
 plot(input_pwm, KV*battery_level.*(input_pwm-1000)/1000);
-ylabel("propeller speed [rpm]");
-xlabel("pwm high time [us]");
-legend("tachymeter measure", "back emf measure w/17 poles", "pwm [%] \cdot battery voltage [V] \cdot KV [rpm/V]", "Location", "Best");
+ylabel("Propeller speed [rpm]");
+xlabel("Throttle duty cycle [us]");
+legend("manual tachymeter measures", "RPM sensor signal w/17 poles", "throttle [%] \cdot battery voltage [V] \cdot KV [rpm/V]", "Location", "Best");
 

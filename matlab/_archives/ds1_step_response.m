@@ -6,7 +6,8 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.03.25_logs");
+addpath(work_dir(1:idx(end-1))+"\matlab\functions");
 
 run_sim = true;
 save_figs = false;

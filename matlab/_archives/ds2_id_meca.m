@@ -6,13 +6,15 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
-addpath(work_dir(1:end)+"\2022.04.28_logs");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.04.28_logs");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.04.28_logs\nidaq");
+addpath(work_dir(1:idx(end-1))+"\matlab\functions");
+addpath(work_dir(1:idx(end-1))+"\matlab\simulink_model");
 
 % set figures parameters
 set(groot, "DefaultAxesFontSize", 14);
 set(groot, "DefaultLineLineWidth", 1.5);
-% reset(gcf);
+
 
 %% CONSTANTS
 NB_DS = 5; % number of datasets
@@ -59,12 +61,12 @@ end
 clear temp i;
 
 %% 
-load('model/params.mat');
+load('params.mat');
 dataset = ms010msp{SELECT};
 
 MASK = extract_vals(dataset(:,8), 1000, 1000);
 
-u =  (dataset(:, 8)-1e3)/1e3;
+u = (dataset(:, 8)-1e3)/1e3;
 w = dataset(:, 9);
 j = meta{SELECT}{6}./w;
 qe1 = rms(dataset(:,5:7), 2)-mean(rms(dataset(MASK,5:7), 2)); % measured torque 

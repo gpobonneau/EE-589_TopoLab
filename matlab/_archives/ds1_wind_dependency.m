@@ -3,7 +3,13 @@ clc;
 clear;
 close all;
 
-addpath('functions');
+% add paths
+work_dir = pwd;
+idx = strfind(work_dir, '\');
+addpath(work_dir(1:idx(end-1))+"\_data\2022.03.25_logs");
+addpath(work_dir(1:idx(end-1))+"\matlab\saves");
+
+% flags
 save_figs = false;
 run_comp = false;
 
@@ -17,33 +23,33 @@ if run_comp == true
     xvalue = yvalue;
 
     thrust_values_wind00
-    load('saves\wind.mat');
+    load('wind.mat');
     yvalue(1) = regression.a;
     xvalue(1) = 0;
-    save('saves\wind.mat', 'yvalue', 'xvalue', '-double');
+    save('wind.mat', 'yvalue', 'xvalue', '-double');
     
     thrust_values_wind40
-    load('saves\wind.mat');
+    load('wind.mat');
     yvalue(2) = regression.a;
     xvalue(2) = 40;
-    save('saves\wind.mat', 'yvalue', 'xvalue', '-double');
+    save('wind.mat', 'yvalue', 'xvalue', '-double');
     
     thrust_values_wind80
-    load('saves\wind.mat');
+    load('wind.mat');
     yvalue(3) = regression.a;
     xvalue(3) = 80;
-    save('saves\wind.mat', 'yvalue', 'xvalue', '-double');
+    save('wind.mat', 'yvalue', 'xvalue', '-double');
     
     thrust_values_wind95
-    load('saves\wind.mat');
+    load('wind.mat');
     yvalue(4) = regression.a;
     xvalue(4) = 95;
-    save('saves\wind.mat', 'yvalue', 'xvalue', '-double');
+    save('wind.mat', 'yvalue', 'xvalue', '-double');
     
     close all;
     clearvars -except yvalue xvalue;
 else
-    load('saves\wind.mat');
+    load('wind.mat');
 end
 
 figure;

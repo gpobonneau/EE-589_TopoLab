@@ -6,26 +6,24 @@ function data = ds2_merge_data(nidaq_file, log_file, delay)
     TE_ATI = 1/120;
     TE_LOG = 1/5;
 
-    % import data and convert 
-    temp = readmatrix("2022.04.28_logs/nidaq/"+nidaq_file);
+    % import load cell data and convert format
+    temp = readmatrix(nidaq_file);
     temp(:, 4:end) = volt2load_ati(temp);
-%     mask = smooth(~sum(temp(:, 4:end), 2)==0)>0; % cut data after ATI is not recording anymore
-%     temp = temp(mask,:);
     temp = temp(1:end-2,:);
 
-    % save data
+    % select relevant data
     data(:,1) = temp(:,2);
     data(:,2:7) = temp(:,4:end);
 
-    % read logs
-    temp = readmatrix("2022.04.28_logs/"+log_file);
+    % import arduino rpm data
+    temp = readmatrix(log_file);
     temp(:,3) = filloutliers(temp(:,3), 'linear', 'movmedian', 10);
 
-    % sync signals and match sizes
+    % resample arduino rpm data
     temp2(:,1) = reshape(kron(temp(:, 2), ones(1,TE_LOG/TE_ATI))', 1, []);
     temp2(:,2) = reshape(kron(temp(:, 3), ones(1,TE_LOG/TE_ATI))', 1, []);
 
-    % save and merge data
+    % sync and merge data
     len_ati = length(data);
     len_log = length(temp2);   
     if (delay > 0)

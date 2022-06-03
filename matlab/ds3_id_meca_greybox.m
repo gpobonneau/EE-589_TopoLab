@@ -6,9 +6,10 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
-addpath(work_dir(1:end)+"\2022.05.15_logs");
-addpath(work_dir(1:end)+"\2022_05_23_logs");
+addpath(work_dir(1:idx(end))+"\_data\2022.05.15_logs");
+addpath(work_dir(1:idx(end))+"\_data\2022.05.23_logs");
+addpath(work_dir(1:idx(end))+"\matlab\functions");
+addpath(work_dir(1:idx(end))+"\matlab\saves");
 
 % set figures parameters
 set(groot, "DefaultAxesFontSize", 10);
@@ -56,8 +57,8 @@ meta{6} = {"output_2022-05-15_16-59-29-battery-test2.log", [1 0], 0.01, [15.69, 
 
 % read data
 temp = readmatrix(meta{SELECT}{1});
-temp(:, 2)=(temp(:, 2)-1000)/1000; % pourcentage
-temp(:, 3)=temp(:, 3)*NB_POLES/2*(2*pi/60); % rad/s
+temp(:, 2)=temp(:, 2); % duty cycle
+temp(:, 3)=temp(:, 3); % [Hz]
 temp = temp(meta{SELECT}{2}(1):end-meta{SELECT}{2}(2), :);
 
 [un, MU, GU] = normalize(temp(:,2), 'center', 'mean' , 'scale', 'std');
@@ -90,40 +91,32 @@ legend('Autocorrelation', 'periodicity : '+string(PLGTH)+'x'+string(PNB));
 
 %% DATA PREPARATION AND SEPARATION
 zt=iddata(y, u, TE); % total set
-
-data.InputName  = '\Delta CTemp';
-data.InputUnit  = 'C';
-data.OutputName = '\Delta PTemp';
-data.OutputUnit = 'C';
-data.TimeUnit   = 'minutes';
+set(zt, 'InputName', 'Throttle duty cycle', 'OutputName', 'RPM sensor signal', 'InputUnit', 'us', 'OutputUnit', 'Hz');
 
 if PNB>1
-    
     if PLGTH*PNB ~= NLGTH
         PNB = PNB-1;
         NLGTH = PLGTH*(PNB);
     end
-
-    figure;
+    figure('Name','Check data periodicity and noise','NumberTitle','off');
     plot(reshape(yn(1:PLGTH*(PNB)), [], PNB));
     xlim([0 PLGTH]);
     legend;
-    
+    xlabel("Time [samples]");
+    ylabel("Amplitude [-]");
 end
 
-CUT = round(2/3)*NLGTH;
-
 % separate training and validation sets 
+CUT = round(2/3)*NLGTH;
 zi = detrend(zt([1:CUT]),0); % identification set
 zv = detrend(zt([CUT+1:end]),0); % validation set
 
 uv=u(CUT+1:end);
 yv=y(CUT+1:end);
 
-w = (0:(PLGTH-1))*2*pi/(TE*PLGTH);
+w =(0:(PLGTH-1))*2*pi/(TE*PLGTH);
 
 %% IDENTIFICATION
-
 % systemIdentification;
           
 Opt = procestOptions;            
@@ -132,7 +125,8 @@ present(model_o1);
 model_o2 = procest(zi, 'P2DU', Opt);
 present(model_o2);
 
-figure; compare(zv, model_o1, model_o2);
+figure('Name','Compare models to data','NumberTitle','off');
+compare(zv, model_o1, model_o2);
 
 %% TEST
 % model 1
@@ -156,7 +150,7 @@ plot(t, yv);
 legend("yhat", "y");
 
 %% COMPUTE AND SAVE PARAMETERS
-load('model/params.mat');
+load('params.mat');
 % preliminary values
 Bf = 1e-4;
 Jl = 10*1/3*20.12e-3*(6.35e-3)^2;
@@ -170,7 +164,7 @@ Jm = model_o2.Zeta*model_o2.Tw*Ke^2/Ra;
 La = model_o2.Tw^2*Ke^2/Jm;
 Jt = Jm + Jl;
 
-save('model/params.mat', 'Td', 'Bf', 'Ra', 'Ke', 'Jt', 'La', 'CT0', 'CT1', 'CQ0', 'CQ1', '-double');
+save('params.mat', 'Td', 'Bf', 'Ra', 'Ke', 'Jt', 'La', 'CT0', 'CT1', 'CQ0', 'CQ1', '-double');
 
 %% VERIFY
 SELECT = 2;

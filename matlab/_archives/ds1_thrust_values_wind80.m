@@ -3,7 +3,13 @@ clc;
 clear;
 close all;
 
-addpath('functions');
+% add paths
+work_dir = pwd;
+idx = strfind(work_dir, '\');
+addpath(work_dir(1:idx(end-1))+"\_data\2022.03.25_logs");
+addpath(work_dir(1:idx(end-1))+"\matlab\functions");
+
+% flags
 save_figs = false;
 
 % set figures parameters
@@ -12,8 +18,8 @@ set(groot, "DefaultLineLineWidth", 1.5);
 
 %% PREPROCESSING DATA
 % read files
-ms010msp009_ati = readmatrix('raw_data/MS010MPT009_NIDAQ USB-6210_31683603.csv');
-ms010msp009_ati(:, 4:end) = Gamma_volt_to_load(ms010msp009_ati); %convert from voltages to loads
+ms010msp009_ati = readmatrix('MS010MPT009_NIDAQ USB-6210_31683603.csv');
+ms010msp009_ati(:, 4:end) = volt2load_ati(ms010msp009_ati); %convert from voltages to loads
 ms010msp009_ati = ms010msp009_ati(:, 4:6);
 
 figure;

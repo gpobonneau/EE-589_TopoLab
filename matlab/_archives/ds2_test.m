@@ -6,11 +6,9 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
-addpath(work_dir(1:end)+"\2022.04.28_logs");
-
-% add flags
-save_figs = false;
+addpath(work_dir(1:idx(end-1))+"\_data\2022.04.28_logs");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.04.28_logs\nidaq");
+addpath(work_dir(1:idx(end-1))+"\matlab\functions");
 
 % set figures parameters
 set(groot, "DefaultAxesFontSize", 14);
