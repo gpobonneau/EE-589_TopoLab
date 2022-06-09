@@ -6,9 +6,9 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:end)+"\functions");
-addpath(work_dir(1:end)+"\2022.05.23_logs");
-addpath(work_dir(1:end)+"\2022.05.24_logs");
+addpath(work_dir(1:idx(end))+"\_data\2022.05.23_logs");
+addpath(work_dir(1:idx(end))+"\_data\2022.05.24_logs");
+addpath(work_dir(1:idx(end))+"\matlab\functions");
 
 % set figures parameters
 set(groot, "DefaultAxesFontSize", 10);
@@ -37,8 +37,8 @@ tv=(temp(:,1)-temp(1,1))/1e6;
 % read arduino log 
 temp = readmatrix(meta{SELECT}{1});
 TE=meta{SELECT}{4};
-u=(temp(:,2)-1e3)/1e3*16; % [%] throttle
-y=temp(:,3)*NB_POLES/2*(2*pi/60); % [rad/s] propeller speed
+u=temp(:,2); % [%] throttle
+y=temp(:,3); % [rad/s] propeller speed
 tu=(0:length(u)-1)*TE;
 MU = mean(u);
 MY = mean(y);
@@ -61,7 +61,29 @@ tv=tv(1:idx(1));
 v=interp1(tv, v, tu);
 
 % plot synced data
-figure;  plot(tu, y/9.5e1); hold on; plot(tu, v*10-150); plot(tu, u); xlabel("time"); ylabel("Amplitude"); legend("measured rpm", "voltage", "throttle");
+figure;
+hold on;
+plot(y/9.5e1);
+plot(u);
+% plot(v*10-150, '--');
+xlabel("time [samples]");
+ylabel("Amplitude [-]");
+legend("RPM sensor signal [Hz]", "throttle", "voltage");
+
+% plot synced data
+figure;
+yyaxis right;
+plot(u);
+ylim([0 1700]);
+ylabel("Throttle duty cycle [us]");
+yyaxis left;
+plot(y);
+ylim([0 1700]);
+ylabel("RPM sensor signal [Hz]");
+xlabel("Time [samples]");
+legend("data", "throttle");
+xlim([38000 70000]);
+xline(54000,'-', 'attach propeller', 'HandleVisibility', 'off', 'LabelVerticalAlignment', 'middle', 'LabelHorizontalAlignment', 'center');
 %% systemIdentification 
 
 % quick gain estimation

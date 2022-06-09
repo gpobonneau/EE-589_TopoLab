@@ -6,10 +6,10 @@ close all;
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:idx(end))+"\_data\2022.05.15_logs");
-addpath(work_dir(1:idx(end))+"\_data\2022.05.23_logs");
-addpath(work_dir(1:idx(end))+"\matlab\functions");
-addpath(work_dir(1:idx(end))+"\matlab\saves");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.05.15_logs");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.05.23_logs");
+addpath(work_dir(1:idx(end-1))+"\matlab\functions");
+addpath(work_dir(1:idx(end-1))+"\matlab\simulink_model");
 
 % set figures parameters
 set(groot, "DefaultAxesFontSize", 10);

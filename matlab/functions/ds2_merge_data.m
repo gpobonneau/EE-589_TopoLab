@@ -1,4 +1,4 @@
-function data = ds2_merge_data(nidaq_file, log_file, delay)
+function data = ds2_merge_data(nidaq_file, log_file, delay, filter)
 %READ_XPM_DATA Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -8,6 +8,9 @@ function data = ds2_merge_data(nidaq_file, log_file, delay)
 
     % import load cell data and convert format
     temp = readmatrix(nidaq_file);
+    if (filter~=0)
+        temp(:, 4:end) = lowpass(temp(:, 4:end), filter, 1/TE_ATI);
+    end
     temp(:, 4:end) = volt2load_ati(temp);
     temp = temp(1:end-2,:);
 

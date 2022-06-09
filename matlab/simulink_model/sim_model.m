@@ -3,10 +3,11 @@ clc;
 clear;
 close all;
 
+
 % add paths
 work_dir = pwd;
 idx = strfind(work_dir, '\');
-addpath(work_dir(1:idx(end))+"2022.04.28_logs");
+addpath(work_dir(1:idx(end-1))+"\_data\2022.04.28_logs");
 
 % load parameters
 load('params.mat');

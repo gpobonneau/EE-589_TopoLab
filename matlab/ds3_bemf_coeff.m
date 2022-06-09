@@ -63,7 +63,7 @@ for i = 2:LEN
         figure("Name", "Visualisation of mask used to compute average", "NumberTitle", "off");
         yyaxis left; plot(mask); ylim([0 1.1]); ylabel('Mask');
         yyaxis right; plot(y{idx}); ylim([0 1e3]); ylabel('RPM sensor signal [Hz]');
-        xlable("time [samples]");
+        xlabel("time [samples]");
     end
 end
 

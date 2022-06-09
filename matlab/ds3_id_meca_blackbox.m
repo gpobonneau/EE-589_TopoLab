@@ -298,20 +298,3 @@ title('BJ');
 figure;
 resid(zv, model_ss);
 title('SS');
-
-%% VALLIDATION
-model = model_oe; % select best model
-modelc = d2c(model, 'tustin', TE);
-present(model);
-present(modelc);
-
-t = (0:length(u)-1)*meta{SELECT}{3};
-yhat = lsim(modelc, u, t);
-
-% plot
-figure;
-hold on;
-plot(t, yhat*GY+MY);
-plot(t, ground_truth(:,3));
-ylim([0 1e3]);
-legend("yhat", "y");

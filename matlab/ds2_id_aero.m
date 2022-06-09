@@ -40,7 +40,7 @@ meta{4} = {"MS024MPT011_NIDAQ USB-6210_31683603.csv", "output_2022-04-29_17-57-1
 % read and merge data
 ms010msp{NB_WIND} = {};
 for i = 1:5
-    ms010msp{i} = ds2_merge_data(meta{i}{1}, meta{i}{2}, meta{i}{3});
+    ms010msp{i} = ds2_merge_data(meta{i}{1}, meta{i}{2}, meta{i}{3}, 0);
     temp = ms010msp{i};
     
     % convert data
@@ -55,6 +55,26 @@ for i = 1:5
 
     % confirm changes
     ms010msp{i} = temp;
+end
+
+%% read and merge data
+ms010msp_fil{NB_WIND} = {};
+for i = 1:5
+    ms010msp_fil{i} = ds2_merge_data(meta{i}{1}, meta{i}{2}, meta{i}{3}, 1);
+    temp = ms010msp_fil{i};
+    
+    % convert data
+    temp(:,8) = temp(:,8)*10 + 1000; % [us] convert into pwm duty cycle 
+    temp(:,9) = temp(:,9); % [Hz] signal freq of rpm sensor =/= rpm
+    
+    % plot
+    if (flag_plotall==true)
+        figure("Name", "Verify corase alignement of logs", "NumberTitle", "off");
+        yyaxis left; plot(temp(:,1), temp(:,9)); ylabel('RPM sensor signal [Hz]'); yyaxis right; plot(temp(:,1), temp(:,8)); ylabel("Throttle duty cycle [us]"); xlabel("Time [s]"); xlim([0 temp(end,1)]);
+    end
+
+    % confirm changes
+    ms010msp_fil{i} = temp;
 end
 
 clear temp i;
@@ -91,20 +111,20 @@ end
 MASK_CAL = {1:350; 550:1000; 200:600; 600:800; 1:1000};
 
 ms010msp_cal = ms010msp;
-ms010msp_fil = ms010msp;
+ms010msp_fil_cal = ms010msp_fil;
 for i = 1:5
     SELECT = i;
     % Calibrate ATI sensor for force and torque
     CALIB_VAL = mean(ms010msp{SELECT}(MASK_CAL{i}, 2:7), 1);
     ms010msp_cal{SELECT}(:,2:7) = ms010msp{SELECT}(:,2:7) - CALIB_VAL;
-    % filter
-    ms010msp_fil{SELECT}(:,2:7) = lowpass(ms010msp_cal{SELECT}(:,2:7), 1, 1/ATI_TS);
+    CALIB_VAL = mean(ms010msp_fil{SELECT}(MASK_CAL{i}, 2:7), 1);
+    ms010msp_fil_cal{SELECT}(:,2:7) = ms010msp_fil{SELECT}(:,2:7) - CALIB_VAL;
     % start time at zero
     ms010msp_cal{SELECT}(:,1) = ms010msp_cal{SELECT}(:,1) - ms010msp_cal{SELECT}(1,1);
-    ms010msp_fil{SELECT}(:,1) = ms010msp_fil{SELECT}(:,1) - ms010msp_fil{SELECT}(1,1);
+    ms010msp_fil_cal{SELECT}(:,1) = ms010msp_fil_cal{SELECT}(:,1) - ms010msp_fil_cal{SELECT}(1,1);
     % select relevant data range for next computations
     ms010msp_cal{SELECT} = ms010msp_cal{SELECT}(meta{i}{4}(1):end-meta{i}{4}(2),:);
-    ms010msp_fil{SELECT} = ms010msp_fil{SELECT}(meta{i}{4}(1):end-meta{i}{4}(2),:);
+    ms010msp_fil_cal{SELECT} = ms010msp_fil_cal{SELECT}(meta{i}{4}(1):end-meta{i}{4}(2),:);
 end
 
 SELECT = 3;
@@ -124,7 +144,7 @@ xlabel("Time [s]");
 
 % after filtering
 figure("Name", "After calibration and filtering @ "+meta{SELECT}{6}+" [m/s] wind", "NumberTitle", "off");
-plot(ms010msp_fil{SELECT}(:,1), ms010msp_fil{SELECT}(:,2:7));
+plot(ms010msp_fil_cal{SELECT}(:,1), ms010msp_fil_cal{SELECT}(:,2:7));
 legend("x", "y", "z", "rx", "ry", "rz");
 ylabel("Amplitude [-]");
 xlabel("Time [s]");
@@ -132,8 +152,8 @@ xlabel("Time [s]");
 % rms
 figure("Name", "RMS signal after filtering @ "+meta{SELECT}{6}+" [m/s] wind", "NumberTitle", "off");
 hold on;
-plot(ms010msp_fil{SELECT}(:,1), rms(ms010msp_fil{SELECT}(:,2:4), 2));
-plot(ms010msp_fil{SELECT}(:,1), rms(ms010msp_fil{SELECT}(:,5:7), 2));
+plot(ms010msp_fil_cal{SELECT}(:,1), rms(ms010msp_fil_cal{SELECT}(:,2:4), 2));
+plot(ms010msp_fil_cal{SELECT}(:,1), rms(ms010msp_fil_cal{SELECT}(:,5:7), 2));
 legend("thrust", "torque");
 ylabel("Amplitude [-]");
 xlabel("Time [s]");
@@ -149,8 +169,8 @@ q_var=zeros(NB_WIND*NB_THROTTLE, 1); % [N] variance of torque
 
 for k = 1:NB_WIND
     
-    dataset = ms010msp_cal{k};
-%     dataset = ms010msp_fil{k};
+%     dataset = ms010msp_cal{k};
+    dataset = ms010msp_fil_cal{k};
 
     % Compute data
     for i = 0:NB_THROTTLE-1
@@ -178,10 +198,18 @@ for k = 1:NB_WIND
         % verify mask position and data detrending
         if (flag_plotall==true)
             figure("Name", "Data overview and mask alignement @ "+meta{k}{6}+" [m/s] wind @ " +num2str(i*10)+"% throttle", "NumberTitle", "off");
-            hold on; plot(dataset(:,2:7)./max(abs(dataset(:,2:7)))); plot(MASK); ylabel("Amplitude"); xlabel("Samples"); xlim([0 length(dataset)]);
+            hold on; plot(dataset(:,2:7)./max(abs(dataset(:,2:7))), 'Handlevisibility', 'off'); plot(MASK); ylabel("Amplitude"); xlabel("Samples"); xlim([0 length(dataset)]);
         end
     end
 end
+
+% figure
+k = 1; i = 6;
+MASK = extract_vals(ms010msp_cal{k}(:,8), 1600, 200);
+figure("Name", "Data overview and mask alignement @ "+meta{k}{6}+" [m/s] wind @ " +num2str(i*10)+"% throttle", "NumberTitle", "off");
+hold on; plot(ms010msp_cal{k}(:,2:7)./max(abs(ms010msp_cal{k}(:,2:7)))); plot(MASK); ylabel("Normalised amplitude"); xlabel("Samples"); xlim([0 length(ms010msp_cal{k})]);
+xlim([19000 22000]);
+legend("x", "y", "z", "rx", "ry", "rz", "MASK");
 
 %% PLOT DATA BEFORE PROCESSING
 u=1000:100:1800;
@@ -217,19 +245,19 @@ grid on;
 
 %% FIT DATA TO MODEL
 % remove 0% wind speed values
-% w=w(1:end-NB_THROTTLE);
-% w_var=w_var(1:end-NB_THROTTLE);
-% j=j(1:end-NB_THROTTLE);
-% t=t(1:end-NB_THROTTLE);
-% t_var=t_var(1:end-NB_THROTTLE);
-% q=q(1:end-NB_THROTTLE);
-% q_var=q_var(1:end-NB_THROTTLE);
+w0=w(1:end-NB_THROTTLE);
+w_var0=w_var(1:end-NB_THROTTLE);
+j0=j(1:end-NB_THROTTLE);
+t0=t(1:end-NB_THROTTLE);
+t_var0=t_var(1:end-NB_THROTTLE);
+q0=q(1:end-NB_THROTTLE);
+q_var0=q_var(1:end-NB_THROTTLE);
 
 % remove NaN values
-w0=w(~isnan(w));
-j0=j(~isnan(j));
-t0=t(~isnan(t));
-q0=q(~isnan(q));
+w0=w(~isnan(w0));
+j0=j(~isnan(j0));
+t0=t(~isnan(t0));
+q0=q(~isnan(q0));
 
 fitType = {'x', 'y'}; % linear fit in x and y
 
@@ -260,10 +288,10 @@ disp("r squared for Torque :");
 disp(gdn_q.rsquare);
 %% MAKE NICE PLOTS
 load('params.mat');
-CT0 = sf_t.a;
-CT1 = sf_t.b;
-CQ0 = sf_q.a;
-CQ1 = sf_q.b;
+CT0 = sf_t.a; disp(CT0);
+CT1 = sf_t.b; disp(CT1);
+CQ0 = sf_q.a; disp(CQ0);
+CQ1 = sf_q.b; disp(CQ1);
 save('params.mat','Td', 'Bf', 'Ra', 'Ke', 'Jt', 'La', 'CT0', 'CT1', 'CQ0', 'CQ1', '-double');
 [X,Y] = meshgrid(0:50:1200,0:5e-3:0.1);
 
@@ -291,7 +319,7 @@ zlabel('Torque [Nm]');
 
 %% EXPLOIT MODEL TO MAKE PREDICTION ON THRUST
 
-SELECT = 5;
+SELECT = 1;
 idx = (1:NB_THROTTLE)+(i-1)*NB_THROTTLE;
 
 % compute signal using model
@@ -300,7 +328,7 @@ jt = meta{SELECT}{6}./wt;
 model = CT0*wt.^2 + CT1*jt.*wt.^2;
 
 figure("Name", "Thrust model with fitted data @ "+meta{SELECT}{6}+" [m/s] wind", "NumberTitle", "off");
-plot(ms010msp_cal{SELECT}(:,1), [rms(ms010msp_cal{SELECT}(:,2:4), 2), rms(ms010msp_fil{SELECT}(:,2:4), 2), model]);
+plot(ms010msp_cal{SELECT}(:,1), [rms(ms010msp_cal{SELECT}(:,2:4), 2), rms(ms010msp_fil_cal{SELECT}(:,2:4), 2), model]);
 ylabel('Thrust [N]');
 xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
@@ -318,7 +346,7 @@ model = CQ0*wt.^2 + CQ1*jt.*wt.^2;
 data = rms(dataset(:,5:7), 2);
 
 figure("Name", "Torque model with fitted data @ "+meta{SELECT}{6}+" [m/s] wind", "NumberTitle", "off");
-plot(ms010msp_cal{SELECT}(:,1), [rms(ms010msp_cal{SELECT}(:,5:7), 2), rms(ms010msp_fil{SELECT}(:,5:7), 2), model]);
+plot(ms010msp_cal{SELECT}(:,1), [rms(ms010msp_cal{SELECT}(:,5:7), 2), rms(ms010msp_fil_cal{SELECT}(:,5:7), 2), model]);
 ylabel('Torque [Nm]');
 xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
