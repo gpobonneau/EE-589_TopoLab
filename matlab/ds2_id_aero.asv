@@ -231,8 +231,8 @@ zlabel('Thrust [N]');
 legend(sprintf('%4.1f [m/s]', metadata{5}{6}), sprintf('%4.1f [m/s]', metadata{1}{6}), sprintf('%4.1f [m/s]', metadata{2}{6}), sprintf('%4.1f [m/s]', metadata{3}{6}), sprintf('%4.1f [m/s]', metadata{4}{6}), "Location", "best");
 grid on;
 
-saveas(fig1, 'figures/2023-05-28_data', 'png');
-saveas(fig1, 'figures/2023-05-28_data', 'mfig');
+saveas(fig1, '2023-05-28_data', 'png');
+saveas(fig1, '2023-05-28_data', 'mfig');
 
 %% wind speed influence
 fitType = {'x'};
@@ -252,8 +252,8 @@ legend(sprintf('%4.1f [m/s]', metadata{5}{6}), sprintf('%4.1f [m/s]', metadata{1
 grid on;
 ylim([0 1200]);
 
-saveas(fig2, 'figures/2023-05-28_windspeed', 'png');
-saveas(fig2, 'figures/2023-05-28_windspeed', 'mfig');
+saveas(fig2, '2023-05-28_windspeed', 'png');
+saveas(fig2, '2023-05-28_windspeed', 'mfig');
 
 %% FIT DATA TO MODEL
 % remove 0% wind speed values
@@ -332,10 +332,10 @@ ylabel('Advance ratio [-]');
 zlabel('Torque [Nm]');
 view(-45,25);
 
-saveas(fig3, 'figures/2023-05-28_thurst', 'png');
-saveas(fig3, 'figures/2023-05-28_thurst', 'mfig');
-saveas(fig4, 'figures/2023-05-28_torque', 'png');
-saveas(fig4, 'figures/2023-05-28_torque', 'mfig');
+saveas(fig3, '2023-05-28_thurst', 'png');
+saveas(fig3, '2023-05-28_thurst', 'mfig');
+saveas(fig4, '2023-05-28_torque', 'png');
+saveas(fig4, '2023-05-28_torque', 'mfig');
 
 %% EXPLOIT MODEL TO MAKE PREDICTION ON THRUST
 
@@ -365,8 +365,8 @@ xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
 xlim([0 ms010msp_cal{SELECT}(end,1)]);
 
-saveas(fig5, 'figures/2023-05-28_model-CT01', 'png');
-saveas(fig5, 'figures/2023-05-28_model-CT01', 'mfig');
+saveas(fig5, '2023-05-28_model-CT01', 'png');
+saveas(fig5, '2023-05-28_model-CT01', 'mfig');
 
 fig6 = figure("Name", "Thrust model with fitted data @ "+metadata{SELECT}{6}+" [m/s] wind", "NumberTitle", "off");
 plot(ms010msp_cal{SELECT}(:,1), [rms(ms010msp_cal{SELECT}(:,2:4), 2), rms(ms010msp_fil_cal{SELECT}(:,2:4), 2), model].*mask);
@@ -375,8 +375,8 @@ xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
 xlim([0 ms010msp_cal{SELECT}(end,1)]);
 
-saveas(fig6, 'figures/2023-05-28_model-CT02', 'png');
-saveas(fig6, 'figures/2023-05-28_model-CT02', 'mfig');
+saveas(fig6, '2023-05-28_model-CT02', 'png');
+saveas(fig6, '2023-05-28_model-CT02', 'mfig');
 
 mask(mask==0.3) = nan;
 
@@ -387,8 +387,8 @@ xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
 xlim([0 ms010msp_cal{SELECT}(end,1)]);
 
-saveas(fig7, 'figures/2023-05-28_model-CT03', 'png');
-saveas(fig7, 'figures/2023-05-28_model-CT03', 'mfig');
+saveas(fig7, '2023-05-28_model-CT03', 'png');
+saveas(fig7, '2023-05-28_model-CT03', 'mfig');
 
 temp1 = rms(ms010msp_cal{SELECT}(:,2:4), 2);
 temp2 = rms(ms010msp_fil_cal{SELECT}(:,2:4), 2);
@@ -403,8 +403,8 @@ xlabel("Samples [-]");
 legend("raw data", "filtered data", "model");
 xlim([0 length(model)-1]);
 
-saveas(fig8, 'figures/2023-05-28_model-CT04', 'png');
-saveas(fig8, 'figures/2023-05-28_model-CT04', 'mfig');
+saveas(fig8, '2023-05-28_model-CT04', 'png');
+saveas(fig8, '2023-05-28_model-CT04', 'mfig');
 
 %% EXPLOIT MODEL TO MAKE PREDICTION ON TORQUE
 SELECT = 3;
@@ -435,8 +435,8 @@ xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
 xlim([0 ms010msp_cal{SELECT}(end,1)]);
 
-saveas(fig9, 'figures/2023-05-28_model-CQ01', 'png');
-saveas(fig9, 'figures/2023-05-28_model-CQ01', 'mfig');
+saveas(fig9, '2023-05-28_model-CQ01', 'png');
+saveas(fig9, '2023-05-28_model-CQ01', 'mfig');
 
 fig10 = figure("Name", "Torque model with fitted data @ "+metadata{SELECT}{6}+" [m/s] wind", "NumberTitle", "off");
 plot(ms010msp_cal{SELECT}(:,1), [rms(ms010msp_cal{SELECT}(:,5:7), 2), rms(ms010msp_fil_cal{SELECT}(:,5:7), 2), model].*mask);
@@ -445,8 +445,8 @@ xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
 xlim([0 ms010msp_cal{SELECT}(end,1)]);
 
-saveas(fig10, 'figures/2023-05-28_model-CQ02', 'png');
-saveas(fig10, 'figures/2023-05-28_model-CQ02', 'mfig');
+saveas(fig10, '2023-05-28_model-CQ02', 'png');
+saveas(fig10, '2023-05-28_model-CQ02', 'mfig');
 
 mask(mask==0.2) = nan;
 
@@ -457,8 +457,7 @@ xlabel("Time [s]");
 legend("raw data", "filtered data", "model");
 xlim([0 ms010msp_cal{SELECT}(end,1)]);
 
-saveas(fig11, 'figures/2023-05-28_model-CQ03', 'png');
-saveas(fig11, 'figures/2023-05-28_model-CQ03', 'mfig');
+saveas(fig11, '2023-05-28_model-CQ03', 'png');
 
 temp1 = rms(ms010msp_cal{SELECT}(:,5:7), 2);
 temp2 = rms(ms010msp_fil_cal{SELECT}(:,5:7), 2);
@@ -473,5 +472,4 @@ xlabel("Samples [-]");
 legend("raw data", "filtered data", "model");
 xlim([0 length(model)-1]);
 
-saveas(fig12, 'figures/2023-05-28_model-CQ04', 'png');
-saveas(fig12, 'figures/2023-05-28_model-CQ04', 'mfig');
+saveas(fig12, '2023-05-28_model-CQ04', 'png');
